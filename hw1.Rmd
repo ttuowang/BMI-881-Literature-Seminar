@@ -1,0 +1,95 @@
+---
+title: "BMI 881 literature seminar HW1"
+author: "Tuo Wang"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE,          # don't show code
+  collapse = TRUE,
+    warning = FALSE,       # don't show warnings
+  message = FALSE,       # don't show messages (less serious warnings)
+  cache = FALSE,         # set to TRUE to save results from last compilation
+  fig.align = "center",  # center figures
+  comment = "#>"
+)
+
+require(tidyverse)      
+```
+
+The data has three categorical variable.
+
+- `year`: 1990, 2005, 2010
+- `age_group`: <75, >=75, all
+- `income_group`: high, low and middle, all
+
+## First attempt
+
+To visualize the mortality values, I use `geom_point` for mortality rates and `geom_errorbar` for the confidence intervals. To show year, age and income, I could use `color` and `facet_wrap`. Because there are some points too closed to each other, I use `position_dodge` to let the point position deviating a little bit.
+
+```{r, fig.width=8, fig.height=5}
+setwd("/Users/tuowang/Documents/UW-Madison Fall 2019/BMI 881/hw1/")
+df <- read.csv("feigin2014_table1_mortality.csv")
+ggplot(df,aes(x = age_group, y = mortality_rate, color = income_group)) +
+  geom_point(position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = interval_low, ymax=interval_high),size = 1.0,width=.5,position = position_dodge(0.5))+
+  facet_wrap(~year, scales = "free_y")+
+  scale_color_manual(values = c("#386cb0","#fdb462","#7fc97f"))+
+  labs(title = 'Figure 1')+
+  theme_bw()
+```
+
+
+```{r, fig.width=8, fig.height=5}
+ggplot(df,aes(x = income_group, y = mortality_rate, color = age_group)) +
+  geom_point(position = position_dodge(0.1)) +
+  geom_errorbar(aes(ymin = interval_low, ymax=interval_high),size = 1.0,width=.5,position = position_dodge(0.1))+
+  facet_wrap(~year, scales = "free_y")+
+  scale_color_manual(values = c("#386cb0","#fdb462","#7fc97f"))+
+  labs(title = 'Figure 2')+
+  theme_bw()
+```
+
+```{r, fig.width=8, fig.height=5}
+ggplot(df, aes(x = year, y = mortality_rate, color = age_group))+
+  geom_point()+
+  geom_line(size = 1.0,  alpha=0.7)+
+  geom_errorbar(aes(ymin = interval_low, ymax=interval_high),size = 1.0,width=1)+
+  facet_grid(~income_group, scales = "free_y")+
+  scale_color_manual(values = c("#386cb0","#fdb462","#7fc97f"))+
+  labs(title = 'Figure 3')+
+  theme_bw()
+```
+
+## Second attempt
+
+After plotting the two figures above, I realized that the mortality rates in age group '>=75' is much larger than the values in the other group. The confidence interval for the other two age groups are not obvious in `figure1`, `figure2` and `figure3`. So if I want to include all the information, I need a figure that can handle different scale. I created a new categorical variable, called `factor1`. `factor1` equals to 0 if the age group is '>=75' and 1 otherwise. Therefore, `factor1` can distinguish between age group '>=75' and the other two groups. In `figure4`, the left Y-axis is mortality rate, the right Y-axis is `factor1`. I eliminated the grey boxes in the right to get a better looking. The top X-axis is income group and the bottom X-axis is year. You can see the obvious difference between `figure3` and `figure4`.
+
+
+```{r, fig.width=8, fig.height=6.5}
+df$factor1 <- rep(1, 27)
+df$factor1[df$age_group == '>=75'] <- 0
+ggplot(df, aes(x = year, y = mortality_rate, color = age_group))+
+  geom_point()+
+  geom_line(size = 1.0,  alpha=0.7)+
+  geom_errorbar(aes(ymin = interval_low, ymax=interval_high),size = 1.0,width=1)+
+  facet_grid(factor1~income_group, scales = "free_y")+
+  scale_color_manual(values = c("#386cb0","#fdb462","#7fc97f"))+
+  theme_bw()+
+  labs(title = 'Figure 4')+
+  theme(strip.text.y = element_blank()) 
+```
+
+
+
+## Code
+
+```{r ref.label = knitr::all_labels(), echo = TRUE, eval = FALSE}
+# this R markdown chunk generates a code appendix
+```
